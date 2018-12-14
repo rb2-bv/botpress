@@ -233,16 +233,24 @@ export default async (bp: typeof sdk, db: Database) => {
     '/events/:userId',
     asyncApi(async (req, res) => {
       const { type = undefined, payload = undefined } = req.body || {}
-      const { userId = undefined } = req.params || {}
-      const { result: user } = await bp.users.getOrCreateUser('web', userId)
-      bp.events.sendEvent({
+      const { botId = undefined, userId = undefined } = req.params || {}
+      let { conversationId = undefined } = req.query || {}
+      conversationId = conversationId && parseInt(conversationId)
+      if (!conversationId) {
+        conversationId = await db.getOrCreateRecentConversation(botId, userId, { originatesFromUserMessage: false })
+      }
+
+      const event = bp.IO.Event({
+        botId,
         channel: 'web',
-        type,
-        user,
-        text: payload.text,
-        raw: _.pick(payload, ['text', 'type', 'data']),
-        ...payload.data
+        direction: 'incoming',
+        payload,
+        target: userId,
+        threadId: conversationId,
+        type: payload.type
       })
+
+      bp.events.sendEvent(event)
       res.status(200).send({})
     })
   )

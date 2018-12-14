@@ -111,9 +111,11 @@ export default class CRFExtractor implements SlotExtractor {
     this._crfModelFn = tmp.fileSync({ postfix: '.bin' }).name
     const trainer = new Trainer()
     trainer.set_params(CRF_TRAINER_PARAMS)
-    trainer.set_callback(str => {
-      /* swallow training results */
-    })
+    if(typeof trainer.set_callback === 'function') {
+      trainer.set_callback(str => {
+        /* swallow training results */
+      })
+    }
 
     for (const sample of samples) {
       const entries: string[][] = []
